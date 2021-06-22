@@ -1,21 +1,218 @@
-language: java
+---
+fleet_script_tasks : &fleet_script_tasks
+      script:
+        - python --version
+fleet_install_tasks : &fleet_install_tasks
+      install:
+        - pip install -r requirements.txt
 
-sudo: required
-
-services:
-  - docker
-
-jdk:
-  - openjdk8
-  - oraclejdk11
-  - openjdk-ea
-
-script:
-  - mvn clean verify
-
-jobs:
+matrix:
+  fast_finish: true
   include:
-    - stage: deploy
-      jdk: openjdk8
-      script: mvn clean source:jar javadoc:javadoc deploy -DskipTests --settings travis_settings.xml
-      if: branch IN (master, 1.0-STABLE) AND type IN (push) AND repo = bootique/bootique-rabbitmq-client
+
+  # https://docs.travis-ci.com/user/reference/linux/
+    - name: "Python 3.7 on focal"
+      dist: focal 
+      language: python # Python 3.6.10 by default
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+    - name: "Python 3.7 on bionic"
+      dist: bionic
+      language: python
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+    - name: "Python 2.7 on xenial"
+      dist: xenial
+      language: python
+      python: 2.7
+      before_install:
+        - pip install virtualenv
+        - virtualenv -p $(which python2) ~venvpy2
+        - source ~venvpy2/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+        
+    - name: "Python 2.7 on trusty"
+      dist: trusty
+      language: python
+      python: 2.7
+      before_install:
+        - uname -a 
+        - pip install virtualenv
+        - virtualenv -p $(which python2) ~venvpy2
+        - source ~venvpy2/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+        
+    - name: "Python 2.7 on precise"
+      dist: precise 
+      language: python
+      python: 2.7
+      before_install:
+        - uname -a 
+        - pip install virtualenv
+        - virtualenv -p $(which python2) ~venvpy2
+        - source ~venvpy2/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+# macOS 
+    - name: "Python 3.7.5 on macOS 11.2.1 osx xcode12.4"
+      os: osx
+      osx_image: 
+        - xcode12.4
+      addons:
+        homebrew:
+          casks:
+          - vagrant
+          packages:
+          - beanstalk
+          update: true
+      language: shell
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+        - python --version
+        - pip install -r requirements.txt
+      script:
+        - brew list --versions
+        - vagrant version    
+      after_success:
+        # - brew cask uninstall multipass
+        - deactivate
+
+    - name: "Python 3.7.5 on macOS 10.15.5 osx xcode12u"
+      os: osx
+      osx_image: 
+        - xcode12u
+      addons:
+        homebrew:
+          casks:
+          - vagrant
+          packages:
+          - beanstalk
+          update: true
+      language: shell
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+        - python --version
+        - pip install -r requirements.txt
+      script:
+        - brew list --versions
+        - vagrant version    
+      after_success:
+        # - brew cask uninstall multipass
+        - deactivate
+
+    - name: "Python 2.7.17 on macOS xcode10.2"
+      os: osx
+      osx_image: xcode10.2
+      language: shell
+      before_install:
+        - pip install virtualenv
+        - virtualenv -p $(which python2) ~venvpy2
+        - source ~venvpy2/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+    - name: "Python 3.7.5 on macOS xcode10.2"
+      os: osx
+      osx_image: xcode10.2
+      language: shell
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+    - name: "Python 3.7.5 on macOS xcode9.4 "
+      os: osx
+      osx_image: xcode9.4
+      language: shell
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+    - name: "Python 3.8 on Windows"
+      os: windows
+      language: shell
+      env:
+        - PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      before_install:
+        - choco install python --version 3.8.1
+        - pip install virtualenv
+        - virtualenv $HOME/venv
+        - source $HOME/venv/Scripts/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+    - name: "Python 3.7 on Windows"
+      os: windows
+      language: shell
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      before_install:
+        - choco install python --version 3.7.3
+        - python -m pip install virtualenv
+        - virtualenv $HOME/venv
+        - source $HOME/venv/Scripts/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      after_success:
+        - deactivate
+
+# https://docs.travis-ci.com/user/reference/windows/#windows-version
+    - name: "Windows Server, version 1809"
+      os: windows
+      language: shell
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      before_install:
+        - choco install python --version 3.7.3
+        - python -m pip install virtualenv
+        - virtualenv $HOME/venv
+        - source $HOME/venv/Scripts/activate
+      script:
+        - systeminfo  
+        - wmic OS get OSArchitecture
+        - wmic process list full
+        - tasklist 
+        - net start 
+        - sc query  
+      after_success:
+        - deactivate
